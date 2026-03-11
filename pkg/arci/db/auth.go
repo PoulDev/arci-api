@@ -23,7 +23,7 @@ func Register(email string, showname string, isAdmin bool) (*Member, error) {
 	
 	var memberID int
 	err := db.QueryRow(
-		"INSERT INTO \"Members\" (\"email\", \"showname\", \"is_admin\") VALUES ($1, $2, $3) RETURNING id",
+		"INSERT INTO Members (\"email\", \"name\", \"is_admin\") VALUES ($1, $2, $3) RETURNING id",
 		hashedEmail, showname, isAdmin,
 	).Scan(&memberID)
 	
@@ -44,7 +44,7 @@ func Login(email string) (*Member, error) {
 	
 	var member Member
 	err := db.QueryRow(
-		"SELECT id, showname, is_admin FROM \"Members\" WHERE email = $1",
+		"SELECT id, name, is_admin FROM Members WHERE email = $1",
 		hashedEmail,
 	).Scan(&member.ID, &member.ShowName, &member.IsAdmin)
 	
@@ -63,7 +63,7 @@ func GetMemberByID(id int) (*Member, error) {
 	var hashedEmail string
 	
 	err := db.QueryRow(
-		"SELECT id, email, showname, is_admin FROM Members WHERE id = $1",
+		"SELECT id, email, name, is_admin FROM Members WHERE id = $1",
 		id,
 	).Scan(&member.ID, &hashedEmail, &member.ShowName, &member.IsAdmin)
 	

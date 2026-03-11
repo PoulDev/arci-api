@@ -25,6 +25,8 @@ func main() {
 	{
 		protected.GET("/events", routes.GetEvents)
 		protected.POST("/events", routes.NewEvent)
+
+		protected.GET("/roles", routes.GetRoles)
 	}
 
 	err = router.Run(":8080")
