@@ -33,6 +33,7 @@ func main() {
 	admin.Use(routes.AuthMiddleware(), routes.AdminMiddleware())
 	{
 		admin.POST("/roles", routes.NewRole)
+		admin.DELETE("/roles/:id", routes.DeleteRole)
 	}
 
 	err = router.Run(":8080")

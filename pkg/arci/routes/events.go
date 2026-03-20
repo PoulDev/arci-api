@@ -1,6 +1,7 @@
 package routes
 
 import (
+	"strconv"
 	"time"
 
 	"arci.it/pkg/arci/db"
@@ -53,6 +54,24 @@ func NewRole(c *gin.Context) {
 		"ok":   true,
 		"role": role,
 	})
+}
+
+func DeleteRole(c *gin.Context) {
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		c.JSON(400, gin.H{
+			"error": "invalid role ID",
+		})
+		return
+	}
+
+	err = db.DeleteRole(id)
+	if err != nil {
+		c.JSON(400, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(200, gin.H{"ok": true})
 }
 
 func GetEvents(c *gin.Context) {

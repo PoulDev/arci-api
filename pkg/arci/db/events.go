@@ -1,6 +1,7 @@
 package db
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -38,6 +39,32 @@ func AddRole(name string) (*Role, error) {
 		ID:   int(id),
 		Name: name,
 	}, nil
+}
+
+func DeleteRole(id int) error {
+	var count int
+	err := db.QueryRow("SELECT COUNT(*) FROM EventRoles WHERE id_ruolo = ?", id).Scan(&count)
+	if err != nil {
+		return err
+	}
+	if count > 0 {
+		return errors.New("role is assigned to one or more events")
+	}
+
+	result, err := db.Exec("DELETE FROM Roles WHERE id = ?", id)
+	if err != nil {
+		return err
+	}
+
+	rows, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if rows == 0 {
+		return errors.New("role not found")
+	}
+
+	return nil
 }
 
 func AddEvent(name string, description string, date time.Time, roles []RoleEvent) error {
