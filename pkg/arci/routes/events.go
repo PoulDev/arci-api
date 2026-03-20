@@ -9,10 +9,10 @@ import (
 )
 
 type EventData struct {
-	Name        string         `json:"name"`
-	Description string         `json:"description"`
-	Date        time.Time      `json:"date"`
-	Roles       []db.RoleEvent `json:"roles"`
+	Name        string              `json:"name"`
+	Description string              `json:"description"`
+	Date        time.Time           `json:"date"`
+	Roles       []db.RoleEventInput `json:"roles"`
 }
 
 type RoleData struct {
@@ -67,7 +67,15 @@ func DeleteRole(c *gin.Context) {
 
 	err = db.DeleteRole(id)
 	if err != nil {
-		c.JSON(400, gin.H{"error": err.Error()})
+		if err.Error() == "role not found" {
+			c.JSON(404, gin.H{"error": err.Error()})
+			return
+		}
+		if err.Error() == "role is assigned to one or more events" {
+			c.JSON(409, gin.H{"error": err.Error()})
+			return
+		}
+		c.JSON(500, gin.H{"error": err.Error()})
 		return
 	}
 
@@ -75,7 +83,9 @@ func DeleteRole(c *gin.Context) {
 }
 
 func GetEvents(c *gin.Context) {
-	events, err := db.GetEvents()
+	memberID := c.GetInt("member_id")
+
+	events, err := db.GetEvents(memberID)
 	if err != nil {
 		c.JSON(500, gin.H{
 			"error": err.Error(),

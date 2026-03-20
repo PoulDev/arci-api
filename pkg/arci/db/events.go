@@ -7,14 +7,22 @@ import (
 	"time"
 )
 
-type Event struct {
-	ID          int
-	Name        string
-	Description string
-	CreatedAt   time.Time
+type EventRole struct {
+	ID   int    `json:"id"`
+	Name string `json:"name"`
+	Max  int    `json:"max"`
 }
 
-type RoleEvent struct {
+type Event struct {
+	ID           int         `json:"id"`
+	Title        string      `json:"titolo"`
+	Description  string      `json:"descrizione"`
+	Date         time.Time   `json:"data"`
+	Roles        []EventRole `json:"roles"`
+	SelectedRole *int        `json:"selected-role"`
+}
+
+type RoleEventInput struct {
 	ID  int `json:"id"`
 	Max int `json:"max"`
 }
@@ -67,9 +75,9 @@ func DeleteRole(id int) error {
 	return nil
 }
 
-func AddEvent(name string, description string, date time.Time, roles []RoleEvent) error {
+func AddEvent(name string, description string, date time.Time, roles []RoleEventInput) error {
 	result, err := db.Exec(
-		"INSERT INTO events (name, description, data) VALUES (?, ?, ?)",
+		"INSERT INTO Events (titolo, descrizione, data) VALUES (?, ?, ?)",
 		name, description, date,
 	)
 	if err != nil {
@@ -90,7 +98,7 @@ func AddEvent(name string, description string, date time.Time, roles []RoleEvent
 	}
 
 	query := fmt.Sprintf(
-		"INSERT INTO event_roles (id_evento, id_ruolo, max) VALUES %s",
+		"INSERT INTO EventRoles (id_evento, nome_ruolo, max) VALUES %s",
 		strings.Join(valueStrings, ", "),
 	)
 
@@ -98,21 +106,96 @@ func AddEvent(name string, description string, date time.Time, roles []RoleEvent
 	return err
 }
 
-func GetEvents() ([]Event, error) {
-	rows, err := db.Query("SELECT id, name, description, created_at FROM events")
+func GetEvents(memberID int) ([]Event, error) {
+	eventRows, err := db.Query(`
+		SELECT
+			e.id, e.titolo, e.descrizione, e.data,
+			er.id, r.id, r.nome, er.max
+		FROM Events e
+		LEFT JOIN EventRoles er ON er.id_evento = e.id
+		LEFT JOIN Roles r ON r.nome = er.nome_ruolo
+		ORDER BY e.id
+	`)
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer eventRows.Close()
 
-	var events []Event
-	for rows.Next() {
-		var event Event
-		err = rows.Scan(&event.ID, &event.Name, &event.Description, &event.CreatedAt)
+	// mappa id evento -> evento
+	eventMap := make(map[int]*Event)
+	var eventOrder []int
+
+	for eventRows.Next() {
+		var (
+			eventID     int
+			title       string
+			description string
+			date        time.Time
+			erID        *int
+			roleID      *int
+			roleName    *string
+			roleMax     *int
+		)
+
+		err = eventRows.Scan(&eventID, &title, &description, &date, &erID, &roleID, &roleName, &roleMax)
 		if err != nil {
 			return nil, err
 		}
-		events = append(events, event)
+
+		if _, exists := eventMap[eventID]; !exists {
+			eventMap[eventID] = &Event{
+				ID:          eventID,
+				Title:       title,
+				Description: description,
+				Date:        date,
+				Roles:       []EventRole{},
+			}
+			eventOrder = append(eventOrder, eventID)
+		}
+
+		if erID != nil && roleID != nil {
+			eventMap[eventID].Roles = append(eventMap[eventID].Roles, EventRole{
+				ID:   *roleID,
+				Name: *roleName,
+				Max:  *roleMax,
+			})
+		}
+	}
+
+	if err = eventRows.Err(); err != nil {
+		return nil, err
+	}
+
+	// Ruolo selezionato dall'evento
+	partRows, err := db.Query(`
+		SELECT p.id_evento, r.id
+		FROM Partecipation p
+		JOIN Roles r ON r.nome = p.ruolo
+		WHERE p.id_partecipante = ?
+	`, memberID)
+	if err != nil {
+		return nil, err
+	}
+	defer partRows.Close()
+
+	for partRows.Next() {
+		var eventID, roleID int
+		if err = partRows.Scan(&eventID, &roleID); err != nil {
+			return nil, err
+		}
+		if ev, exists := eventMap[eventID]; exists {
+			id := roleID
+			ev.SelectedRole = &id
+		}
+	}
+
+	if err = partRows.Err(); err != nil {
+		return nil, err
+	}
+
+	events := make([]Event, 0, len(eventOrder))
+	for _, id := range eventOrder {
+		events = append(events, *eventMap[id])
 	}
 
 	return events, nil
