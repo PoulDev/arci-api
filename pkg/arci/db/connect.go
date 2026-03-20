@@ -2,16 +2,15 @@ package db
 
 import (
 	"database/sql"
-	"strconv"
 	"fmt"
 	"os"
 
-	_ "github.com/lib/pq"
+	_ "github.com/go-sql-driver/mysql"
 )
 
 var (
 	dbHost     string
-	dbPort     int
+	dbPort     string
 	dbUser     string
 	dbPassword string
 	dbName     string
@@ -20,10 +19,10 @@ var (
 )
 
 func getEnv(key string) (string, error) {
-    if value, exists := os.LookupEnv(key); exists && value != "" {
-        return value, nil
-    }
-	return "", fmt.Errorf("%s environment variable is missing", key);
+	if value, exists := os.LookupEnv(key); exists && value != "" {
+		return value, nil
+	}
+	return "", fmt.Errorf("%s environment variable is missing", key)
 }
 
 func getEnvDefault(key string, defaultValue string) string {
@@ -36,39 +35,42 @@ func getEnvDefault(key string, defaultValue string) string {
 func loadConfigs() error {
 	var err error
 
-	dbHost, err = getEnv("DB_HOST");
-	if (err != nil) {return err}
-
-	dbPort, err = strconv.Atoi(getEnvDefault("DB_PORT", "5432"));
-	if (err != nil) {return err}
-
-    dbUser, err = getEnv("DB_USER");
-	if (err != nil) {dbUser = "none"}
-   
-	if (dbUser != "none") {
-		dbPassword, err = getEnv("DB_PASSWORD");
-		if (err != nil) {dbPassword = "none"}
+	dbHost, err = getEnv("DB_HOST")
+	if err != nil {
+		return err
 	}
 
-	dbName, err = getEnv("DB_NAME");
-	if (err != nil) {return err}
+	dbPort = getEnvDefault("DB_PORT", "3306")
+
+	dbUser, err = getEnv("DB_USER")
+	if err != nil {
+		return err
+	}
+
+	dbPassword = getEnvDefault("DB_PASSWORD", "")
+
+	dbName, err = getEnv("DB_NAME")
+	if err != nil {
+		return err
+	}
 
 	return nil
 }
 
 func ConnectDatabase() error {
 	err := loadConfigs()
-	if (err != nil) {
-		return err
-	}
-
-	psqlconn := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable", dbHost, dbPort, dbUser, dbPassword, dbName)
-
-	newdb, err := sql.Open("postgres", psqlconn)
-	db = newdb
 	if err != nil {
 		return err
 	}
+
+	// DSN format: user:password@tcp(host:port)/dbname?parseTime=true
+	dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?parseTime=true", dbUser, dbPassword, dbHost, dbPort, dbName)
+
+	newdb, err := sql.Open("mysql", dsn)
+	if err != nil {
+		return err
+	}
+	db = newdb
 
 	err = db.Ping()
 	if err != nil {

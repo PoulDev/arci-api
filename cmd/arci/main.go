@@ -29,6 +29,12 @@ func main() {
 		protected.GET("/roles", routes.GetRoles)
 	}
 
+	admin := router.Group("/")
+	admin.Use(routes.AuthMiddleware(), routes.AdminMiddleware())
+	{
+		admin.POST("/roles", routes.NewRole)
+	}
+
 	err = router.Run(":8080")
 	if err != nil {
 		fmt.Println(err)

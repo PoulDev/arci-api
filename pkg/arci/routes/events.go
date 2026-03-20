@@ -14,6 +14,10 @@ type EventData struct {
 	Roles       []db.RoleEvent `json:"roles"`
 }
 
+type RoleData struct {
+	Name string `json:"name" binding:"required"`
+}
+
 func GetRoles(c *gin.Context) {
 	roles, err := db.GetRoles()
 	if err != nil {
@@ -25,6 +29,29 @@ func GetRoles(c *gin.Context) {
 
 	c.JSON(200, gin.H{
 		"roles": roles,
+	})
+}
+
+func NewRole(c *gin.Context) {
+	var roleData RoleData
+	if err := c.ShouldBindJSON(&roleData); err != nil {
+		c.JSON(400, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+
+	role, err := db.AddRole(roleData.Name)
+	if err != nil {
+		c.JSON(500, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+
+	c.JSON(201, gin.H{
+		"ok":   true,
+		"role": role,
 	})
 }
 

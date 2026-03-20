@@ -23,10 +23,33 @@ type Role struct {
 	Name string `json:"name"`
 }
 
-func AddEvent(name string, description string, date time.Time, roles []RoleEvent) error {
-	var eventID int
+func AddRole(name string) (*Role, error) {
+	result, err := db.Exec("INSERT INTO Roles (nome) VALUES (?)", name)
+	if err != nil {
+		return nil, err
+	}
 
-	err := db.QueryRow("INSERT INTO events (name, description, data) VALUES ($1, $2, $3) RETURNING id", name, description, date).Scan(&eventID)
+	id, err := result.LastInsertId()
+	if err != nil {
+		return nil, err
+	}
+
+	return &Role{
+		ID:   int(id),
+		Name: name,
+	}, nil
+}
+
+func AddEvent(name string, description string, date time.Time, roles []RoleEvent) error {
+	result, err := db.Exec(
+		"INSERT INTO events (name, description, data) VALUES (?, ?, ?)",
+		name, description, date,
+	)
+	if err != nil {
+		return err
+	}
+
+	eventID, err := result.LastInsertId()
 	if err != nil {
 		return err
 	}
@@ -35,7 +58,7 @@ func AddEvent(name string, description string, date time.Time, roles []RoleEvent
 	valueArgs := make([]interface{}, 0, len(roles)*3)
 
 	for i, r := range roles {
-		valueStrings[i] = fmt.Sprintf("($%d, $%d, $%d)", i*3+1, i*3+2, i*3+3)
+		valueStrings[i] = "(?, ?, ?)"
 		valueArgs = append(valueArgs, eventID, r.ID, r.Max)
 	}
 
