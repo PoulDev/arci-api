@@ -113,7 +113,7 @@ func GetEvents(memberID int) ([]Event, error) {
 			er.id, r.id, r.nome, er.max
 		FROM Events e
 		LEFT JOIN EventRoles er ON er.id_evento = e.id
-		LEFT JOIN Roles r ON r.nome = er.nome_ruolo
+			LEFT JOIN Roles r ON r.id = er.nome_ruolo
 		ORDER BY e.id
 	`)
 	if err != nil {
