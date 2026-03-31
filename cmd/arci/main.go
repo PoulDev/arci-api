@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"time"
 
 	"arci.it/pkg/arci/db"
 	"arci.it/pkg/arci/routes"
@@ -35,6 +36,8 @@ func main() {
 		admin.POST("/roles", routes.NewRole)
 		admin.DELETE("/roles/:id", routes.DeleteRole)
 	}
+
+	fmt.Println(time.Now().String())
 
 	err = router.Run(":8080")
 	if err != nil {

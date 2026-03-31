@@ -83,7 +83,6 @@ func AddEvent(name string, description string, date time.Time, roles []RoleEvent
 	if err != nil {
 		return err
 	}
-
 	eventID, err := result.LastInsertId()
 	if err != nil {
 		return err
@@ -91,17 +90,20 @@ func AddEvent(name string, description string, date time.Time, roles []RoleEvent
 
 	valueStrings := make([]string, len(roles))
 	valueArgs := make([]interface{}, 0, len(roles)*3)
-
 	for i, r := range roles {
+		var roleName string
+		err := db.QueryRow("SELECT nome FROM Roles WHERE id = ?", r.ID).Scan(&roleName)
+		if err != nil {
+			return fmt.Errorf("Role %d not found: %w", r.ID, err)
+		}
 		valueStrings[i] = "(?, ?, ?)"
-		valueArgs = append(valueArgs, eventID, r.ID, r.Max)
+		valueArgs = append(valueArgs, eventID, roleName, r.Max)
 	}
 
 	query := fmt.Sprintf(
 		"INSERT INTO EventRoles (id_evento, nome_ruolo, max) VALUES %s",
 		strings.Join(valueStrings, ", "),
 	)
-
 	_, err = db.Exec(query, valueArgs...)
 	return err
 }
@@ -113,7 +115,7 @@ func GetEvents(memberID int) ([]Event, error) {
 			er.id, r.id, r.nome, er.max
 		FROM Events e
 		LEFT JOIN EventRoles er ON er.id_evento = e.id
-			LEFT JOIN Roles r ON r.id = er.nome_ruolo
+			LEFT JOIN Roles r ON r.nome = er.nome_ruolo
 		ORDER BY e.id
 	`)
 	if err != nil {
