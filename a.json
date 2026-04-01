@@ -1,0 +1,28 @@
+Now add a procedural event loading, every request returns 10 events max.
+
+Respond with the events ordered by date ( newest first ), the user sends the last loaded event and the api returns the next 10 events. Decide what value you should use for keeping track of the last loaded event. If the last loaded event isn't provided just return the 10 newest events.
+
+
+
+Also add a volounteers key in the returned events, in the following format:
+
+"volounteers": {
+
+    "role-name": [
+
+        {"name": "user-name"},
+
+        {"name": "user-name2"}
+
+    ],
+
+    "role-name2": [
+
+        {"name": "user-name3"},
+
+        {"name": "user-name4"}
+
+    ]
+
+}
+

@@ -85,7 +85,17 @@ func DeleteRole(c *gin.Context) {
 func GetEvents(c *gin.Context) {
 	memberID := c.GetInt("member_id")
 
-	events, err := db.GetEvents(memberID)
+	var lastID *int
+	if raw := c.Query("last_id"); raw != "" {
+		id, err := strconv.Atoi(raw)
+		if err != nil {
+			c.JSON(400, gin.H{"error": "invalid last_id"})
+			return
+		}
+		lastID = &id
+	}
+
+	events, err := db.GetEvents(memberID, lastID)
 	if err != nil {
 		c.JSON(500, gin.H{
 			"error": err.Error(),
