@@ -66,15 +66,15 @@ func Partecipate(eventID int, memberID int, roleName string) error {
 	return err
 }
 
-func CancelPartecipation(eventID int, memberID int, roleName string) error {
+func CancelPartecipation(eventID int, memberID int) error {
 	result, err := db.Exec(
-		"DELETE FROM Partecipation WHERE id_evento = ? AND id_partecipante = ? AND ruolo = ?",
-		eventID, memberID, roleName,
+		"DELETE FROM Partecipation WHERE id_evento = ? AND id_partecipante = ?",
+		eventID, memberID,
 	)
 	if err != nil {
 		return err
 	}
-
+ 
 	rows, err := result.RowsAffected()
 	if err != nil {
 		return err
@@ -82,6 +82,6 @@ func CancelPartecipation(eventID int, memberID int, roleName string) error {
 	if rows == 0 {
 		return errors.New("partecipation not found")
 	}
-
+ 
 	return nil
 }

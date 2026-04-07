@@ -41,16 +41,10 @@ func CancelPartecipation(c *gin.Context) {
 		c.JSON(400, gin.H{"error": "invalid event ID"})
 		return
 	}
-
-	var data PartecipationData
-	if err := c.ShouldBindJSON(&data); err != nil {
-		c.JSON(400, gin.H{"error": err.Error()})
-		return
-	}
-
+ 
 	memberID := c.GetInt("member_id")
-
-	err = db.CancelPartecipation(eventID, memberID, data.Role)
+ 
+	err = db.CancelPartecipation(eventID, memberID)
 	if err != nil {
 		if err.Error() == "partecipation not found" {
 			c.JSON(404, gin.H{"error": err.Error()})
@@ -59,6 +53,7 @@ func CancelPartecipation(c *gin.Context) {
 		c.JSON(500, gin.H{"error": err.Error()})
 		return
 	}
-
+ 
 	c.JSON(200, gin.H{"ok": true})
 }
+ 
