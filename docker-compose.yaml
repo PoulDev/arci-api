@@ -1,0 +1,37 @@
+services:
+  mariadb:
+    image: mariadb
+    environment:
+      MYSQL_ROOT_PASSWORD: MARIADB_PASSWORD_SICURISSIMA123
+      MYSQL_USER: arci_user
+      MYSQL_PASSWORD: MARIADB_PASSWORD_UTENTE_SICURA456
+      MYSQL_DATABASE: arcidb
+    expose:
+      - 3306
+    volumes:
+      - "./schema.sql:/docker-entrypoint-initdb.d/1.sql"
+      - mariadb_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      start_period: 10s
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  arci-api:
+    build: .
+    container_name: arci-api
+    ports:
+      - "8080:8080"
+    env_file:
+      - .env
+    depends_on:
+      mariadb:
+        condition: service_healthy
+    environment:
+      GIN_MODE: release
+
+volumes:
+  mariadb_data:
+    driver: local
+

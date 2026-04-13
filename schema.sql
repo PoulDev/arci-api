@@ -35,5 +35,5 @@ CREATE TABLE EventRoles (
     CONSTRAINT fk_eventroles_evento FOREIGN KEY (id_evento) REFERENCES Events(id)
 );
 
-GRANT ALL PRIVILEGES ON *.* TO 'arci'@'%';
-FLUSH PRIVILEGES;
+-- GRANT ALL PRIVILEGES ON *.* TO 'arci'@'%';
+-- FLUSH PRIVILEGES;
