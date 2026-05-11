@@ -26,6 +26,7 @@ func main() {
 	{
 		protected.GET("/events", routes.GetEvents)
 		protected.POST("/events", routes.NewEvent)
+		protected.DELETE("/events/:event_id", routes.DeleteEvent)
 
 		protected.POST("/events/:event_id/partecipate", routes.Partecipate)
 		protected.DELETE("/events/:event_id/partecipate", routes.CancelPartecipation)

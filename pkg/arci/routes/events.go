@@ -82,6 +82,28 @@ func DeleteRole(c *gin.Context) {
 	c.JSON(200, gin.H{"ok": true})
 }
 
+func DeleteEvent(c *gin.Context) {
+	eventID, err := strconv.Atoi(c.Param("event_id"))
+	if err != nil {
+		c.JSON(400, gin.H{
+			"error": "invalid event ID",
+		})
+		return
+	}
+
+	err = db.DeleteEvent(eventID)
+	if err != nil {
+		if err.Error() == "event not found" {
+			c.JSON(404, gin.H{"error": err.Error()})
+			return
+		}
+		c.JSON(500, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(200, gin.H{"ok": true})
+}
+
 func GetEvents(c *gin.Context) {
 	memberID := c.GetInt("member_id")
 

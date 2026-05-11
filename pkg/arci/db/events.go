@@ -254,6 +254,33 @@ func GetEvents(memberID int, lastID *int) ([]Event, error) {
 	return events, nil
 }
 
+func DeleteEvent(eventID int) error {
+	_, err := db.Exec("DELETE FROM Partecipation WHERE id_evento = ?", eventID)
+	if err != nil {
+		return err
+	}
+
+	_, err = db.Exec("DELETE FROM EventRoles WHERE id_evento = ?", eventID)
+	if err != nil {
+		return err
+	}
+
+	result, err := db.Exec("DELETE FROM Events WHERE id = ?", eventID)
+	if err != nil {
+		return err
+	}
+
+	rows, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if rows == 0 {
+		return errors.New("event not found")
+	}
+
+	return nil
+}
+
 func GetRoles() ([]Role, error) {
 	rows, err := db.Query("SELECT id, nome FROM Roles")
 	if err != nil {
